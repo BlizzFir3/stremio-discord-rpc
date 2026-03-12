@@ -11,7 +11,7 @@ export class DiscordManager {
 
         this.client.on('ready', () => {
             this.isConnected = true;
-            console.log(`[Discord] Connecté en tant que ${this.client.user?.username}`);
+            console.log(`[Discord] Connected as ${this.client.user?.username}`);
         });
     }
 
@@ -19,7 +19,7 @@ export class DiscordManager {
         try {
             await this.client.login({ clientId: this.clientId });
         } catch (error) {
-            console.error('[Discord] Erreur de connexion IPC:', error);
+            console.error('[Discord] IPC connection error:', error);
         }
     }
 
@@ -34,29 +34,29 @@ export class DiscordManager {
 
         try {
             const activity: any = {
-                details: `Regarde : ${title}`,
+                details: `Watching: ${title}`,
                 state: state,
                 instance: false,
             };
 
-            // Gestion du temps
+            // Time management
             if (startTimestamp) activity.startTimestamp = startTimestamp;
             if (endTimestamp) activity.endTimestamp = endTimestamp;
 
-            // Gestion de l'image (URL externe ou fallback)
+            // Image management (external URL or fallback)
             if (imageUrl) {
                 activity.largeImageKey = imageUrl;
                 activity.largeImageText = title;
             } else {
-                // Image par défaut si Trakt ne renvoie pas d'ID
+                // Default image if Trakt doesn't return an ID
                 activity.largeImageKey = 'stremio_logo';
                 activity.largeImageText = 'Stremio';
             }
 
             await this.client.setActivity(activity);
-            console.log(`[Discord RPC] Statut mis à jour avec succès.`);
+            console.log(`[Discord RPC] Status successfully updated.`);
         } catch (error) {
-            console.error('[Discord] Erreur lors de la mise à jour de la présence:', error);
+            console.error('[Discord] Error updating presence:', error);
         }
     }
 

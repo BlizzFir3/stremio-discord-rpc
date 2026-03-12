@@ -30,7 +30,7 @@ export class TraktClient {
 
             const data = await response.json();
 
-            // Extraction des timestamps de Trakt
+            // Extract timestamps from Trakt
             const startTime = data.started_at ? new Date(data.started_at) : undefined;
             const endTime = data.expires_at ? new Date(data.expires_at) : undefined;
 
@@ -41,15 +41,15 @@ export class TraktClient {
                 return {
                     title: data.show.title,
                     streamName: `S${season}E${ep} - ${data.episode.title}`,
-                    imdbId: data.show.ids?.imdb, // ID de la série
+                    imdbId: data.show.ids?.imdb, // Show ID
                     startTime,
                     endTime
                 };
             } else if (data.type === 'movie' && data.movie) {
                 return {
                     title: data.movie.title,
-                    streamName: data.movie.year ? `(${data.movie.year})` : 'Film',
-                    imdbId: data.movie.ids?.imdb, // ID du film
+                    streamName: data.movie.year ? `(${data.movie.year})` : 'Movie',
+                    imdbId: data.movie.ids?.imdb, // Movie ID
                     startTime,
                     endTime
                 };
@@ -57,7 +57,7 @@ export class TraktClient {
 
             return null;
         } catch (error) {
-            console.error('[Trakt] Erreur réseau lors du polling.');
+            console.error('[Trakt] Network error during polling.');
             return null;
         }
     }

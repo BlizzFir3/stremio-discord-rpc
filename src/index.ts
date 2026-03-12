@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { DiscordManager } from './discord';
 import { TraktClient } from './trakt';
+import { TrayManager } from './tray';
 
 const POLLING_INTERVAL_MS = 15000;
 
@@ -10,28 +11,33 @@ async function bootstrap() {
     const traktUsername = process.env.TRAKT_USERNAME;
 
     if (!discordClientId || !traktClientId || !traktUsername) {
-        console.error('Erreur critique : Variables manquantes dans le .env');
+        console.error('Critical error: Missing variables in .env');
         process.exit(1);
     }
 
     const discord = new DiscordManager(discordClientId);
     const trakt = new TraktClient(traktUsername, traktClientId);
 
-    console.log('Démarrage du daemon Trakt-Discord RPC...');
+    // Initialize the system tray
+    const tray = new TrayManager(async () => {
+        // Clean shutdown procedure
+        await discord.clearPresence();
+        process.exit(0);
+    });
+
+    console.log('Starting Trakt-Discord RPC daemon...');
+    tray.start();
     await discord.connect();
 
     let currentStream = "";
+    let pollingTimer: NodeJS.Timeout;
 
-    setInterval(async () => {
+    const poll = async () => {
         const playing = await trakt.getCurrentPlaying();
 
         if (playing) {
-            // Anti-spam : on ne push que si l'épisode ou le film a changé
             if (playing.streamName !== currentStream) {
-                console.log(`[Lecture] ${playing.title} | ${playing.streamName}`);
                 currentStream = playing.streamName;
-
-                // Construction de l'URL de l'affiche via le CDN public de Stremio
                 const posterUrl = playing.imdbId
                     ? `https://images.metahub.space/poster/medium/${playing.imdbId}/img`
                     : undefined;
@@ -40,18 +46,27 @@ async function bootstrap() {
                     playing.title,
                     playing.streamName,
                     playing.startTime,
-                    playing.endTime,
+                    undefined, // playing.endTime, replace undefined by the comment if you want to show time left instead of time played
                     posterUrl
                 );
             }
         } else {
             if (currentStream !== "") {
-                console.log(`[Arrêt] Nettoyage de Discord.`);
                 await discord.clearPresence();
                 currentStream = "";
             }
         }
-    }, POLLING_INTERVAL_MS);
+    };
+
+    pollingTimer = setInterval(poll, POLLING_INTERVAL_MS);
+
+    // Handle graceful exit (Ctrl+C in terminal)
+    process.on('SIGINT', async () => {
+        clearInterval(pollingTimer);
+        await discord.clearPresence();
+        tray.stop();
+        process.exit(0);
+    });
 }
 
 bootstrap().catch(console.error);
