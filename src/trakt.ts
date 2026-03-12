@@ -1,6 +1,9 @@
 export interface MediaState {
     title: string;
     streamName: string;
+    imdbId?: string;
+    startTime?: Date;
+    endTime?: Date;
 }
 
 export class TraktClient {
@@ -14,7 +17,6 @@ export class TraktClient {
 
     public async getCurrentPlaying(): Promise<MediaState | null> {
         try {
-            // L'API Trakt nécessite des headers spécifiques pour fonctionner
             const response = await fetch(`https://api.trakt.tv/users/${this.username}/watching`, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -23,32 +25,33 @@ export class TraktClient {
                 }
             });
 
-            // Code 204 = L'utilisateur ne regarde rien actuellement
-            if (response.status === 204) {
-                return null;
-            }
-
-            if (!response.ok) {
-                console.error(`[Trakt] Erreur API : Code ${response.status}`);
-                return null;
-            }
+            if (response.status === 204) return null;
+            if (!response.ok) return null;
 
             const data = await response.json();
 
-            // Formatage propre selon que ce soit une série ou un film
+            // Extraction des timestamps de Trakt
+            const startTime = data.started_at ? new Date(data.started_at) : undefined;
+            const endTime = data.expires_at ? new Date(data.expires_at) : undefined;
+
             if (data.type === 'episode' && data.episode && data.show) {
-                // Formate la saison et l'épisode (ex: S01E04)
                 const season = data.episode.season.toString().padStart(2, '0');
                 const ep = data.episode.number.toString().padStart(2, '0');
 
                 return {
-                    title: data.show.title, // Le nom de la série
-                    streamName: `S${season}E${ep} - ${data.episode.title}` // L'épisode
+                    title: data.show.title,
+                    streamName: `S${season}E${ep} - ${data.episode.title}`,
+                    imdbId: data.show.ids?.imdb, // ID de la série
+                    startTime,
+                    endTime
                 };
             } else if (data.type === 'movie' && data.movie) {
                 return {
                     title: data.movie.title,
-                    streamName: data.movie.year ? `(${data.movie.year})` : 'Film'
+                    streamName: data.movie.year ? `(${data.movie.year})` : 'Film',
+                    imdbId: data.movie.ids?.imdb, // ID du film
+                    startTime,
+                    endTime
                 };
             }
 

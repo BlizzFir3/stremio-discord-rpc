@@ -20,29 +20,35 @@ async function bootstrap() {
     console.log('Démarrage du daemon Trakt-Discord RPC...');
     await discord.connect();
 
-    // Variables d'état
     let currentStream = "";
-    let currentStartTimestamp: Date | undefined = undefined;
 
     setInterval(async () => {
         const playing = await trakt.getCurrentPlaying();
 
         if (playing) {
-            // Si c'est une nouvelle lecture, on met à jour Discord
+            // Anti-spam : on ne push que si l'épisode ou le film a changé
             if (playing.streamName !== currentStream) {
-                console.log(`[Changement d'état] Nouveau média détecté : ${playing.title} | ${playing.streamName}`);
+                console.log(`[Lecture] ${playing.title} | ${playing.streamName}`);
                 currentStream = playing.streamName;
-                currentStartTimestamp = new Date(); // On fige l'heure de début
 
-                await discord.setPresence(playing.title, playing.streamName, currentStartTimestamp);
+                // Construction de l'URL de l'affiche via le CDN public de Stremio
+                const posterUrl = playing.imdbId
+                    ? `https://images.metahub.space/poster/medium/${playing.imdbId}/img`
+                    : undefined;
+
+                await discord.setPresence(
+                    playing.title,
+                    playing.streamName,
+                    playing.startTime,
+                    playing.endTime,
+                    posterUrl
+                );
             }
         } else {
-            // Si rien ne joue mais qu'on avait un statut actif, on nettoie
             if (currentStream !== "") {
-                console.log(`[Changement d'état] Arrêt de la lecture. Nettoyage de Discord.`);
+                console.log(`[Arrêt] Nettoyage de Discord.`);
                 await discord.clearPresence();
                 currentStream = "";
-                currentStartTimestamp = undefined;
             }
         }
     }, POLLING_INTERVAL_MS);
