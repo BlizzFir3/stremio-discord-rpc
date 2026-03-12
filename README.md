@@ -14,55 +14,44 @@ Unlike traditional Stremio addons that rely on the local HTTP server (which is o
 
 - A [Trakt.tv](https://trakt.tv/) account (Profile must be set to "Public").
 - Trakt integration enabled within Stremio (*Settings > Authentication*).
-- [Node.js](https://nodejs.org/) (v18+ recommended) for building the project.
+- The standalone executable of this daemon (or Node.js v18+ if running from source).
 
-## ⚙️ Setup and Configuration
+## ⚙️ Initial Setup Guide (For New Users)
 
-1. Clone this repository and install the dependencies:
-   ```bash
-   npm install
+To use this daemon, you need to provide your own API keys. Don't worry, both are completely free and take less than 2 minutes to get.
 
-```
+### 1. Get your Discord Client ID
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
+2. Click **New Application** in the top right. Name it what you want to be displayed (e.g., "Stremio" or "Trakt").
+3. Accept the terms and click **Create**.
+4. In the **General Information** tab, copy the **Application ID**. This is your `DISCORD_CLIENT_ID`.
 
-2. Create a `.env` file at the root of the project. **Never commit this file to version control.**
+### 2. Get your Trakt Client ID
+1. Log in to [Trakt.tv](https://trakt.tv/).
+2. Go to your [API Applications page](https://trakt.tv/oauth/applications) (*Settings > Your API Apps*).
+3. Click **New Application**.
+4. Name it "Stremio RPC" and put `http://localhost` in the *Redirect URI* field (we won't use it).
+5. Click **Save App**. Copy the **Client ID**. This is your `TRAKT_CLIENT_ID`.
+
+### 3. Configure the App
+1. Create a file named `.env` in the exact same folder as your `stremio-rpc.exe` executable.
+2. Open it with any text editor and paste your credentials:
+
 ```env
-# Discord Developer Portal (General Information > Application ID)
-DISCORD_CLIENT_ID=YourDiscordClientID
-
-# Trakt API (OAuth Applications > Client ID)
-TRAKT_CLIENT_ID=YourTraktClientID
-TRAKT_USERNAME=YourTraktUsername
+DISCORD_CLIENT_ID=YourDiscordClientIDHere
+TRAKT_CLIENT_ID=YourTraktClientIDHere
+TRAKT_USERNAME=YourTraktUsernameHere
 
 ```
-
-
 
 ## 🚀 Usage
 
-### Development Mode
-
-To run the script directly via TypeScript without compiling:
-
-```bash
-npm run dev
-
-```
-
-### Production Mode (Standalone Executable)
-
-To compile the project into a standalone binary executable for Windows (includes the system tray icon):
-
-```bash
-npm run package
-
-```
-
-The executable will be generated in the `bin/stremio-rpc.exe` directory.
-**Note:** The `.env` file must be located in the same directory as the executable for it to read your configuration properly.
+Simply double-click the `stremio-rpc.exe` file. An icon will silently appear in your Windows System Tray (bottom right near the clock).
+As long as the icon is there, the daemon is running in the background. Right-click the icon and select **"Quitter"** to stop it.
 
 ## ⚠️ Critical Troubleshooting: The Windows IPC Trap
 
-If the application is running (tray icon is visible) and the logs indicate success, but **nothing shows up on Discord**, check your process privilege levels.
+If the application is running (tray icon is visible) but **nothing shows up on Discord**, check your process privilege levels.
 
 Communication between this daemon and Discord occurs via a Windows "Named Pipe" (`\\?\pipe\discord-ipc-0`). **Strict Windows security policies prevent a standard process from communicating with a process running as Administrator.**
 
@@ -70,5 +59,3 @@ Communication between this daemon and Discord occurs via a Windows "Named Pipe" 
 * If you launch Discord as an Administrator, you must launch this daemon as an Administrator as well, otherwise the OS will silently drop the IPC payload.
 
 Also, verify in Discord: *Settings > Activity Privacy > "Share your activity status by default when joining large servers"* must be toggled **ON**.
-
-Here is the application link : [Stremio-Discord RPC](https://discord.com/oauth2/authorize?client_id=1481553071350747277)
