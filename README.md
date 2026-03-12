@@ -72,3 +72,11 @@ Communication between this daemon and Discord occurs via a Windows "Named Pipe" 
 * If you launch Discord as an Administrator, you must launch this daemon as an Administrator as well, otherwise the OS will silently drop the IPC payload.
 
 Also, verify in Discord: *Settings > Activity Privacy > "Share your activity status by default when joining large servers"* must be toggled **ON**.
+
+## 🗺️ Roadmap & Contributing
+
+**Current Top Priority: Full Cross-Platform Support**
+
+While the Node.js code itself is OS-agnostic, the current packaging and autostart scripts (`scripts/*.bat`) are designed specifically for **Windows**. We are actively looking for contributors to help adapt the autostart mechanisms and IPC validations for **macOS** and **Linux** (e.g., `systemd` services, `launchd` agents). 
+
+If you'd like to help make this tool universally compatible, please check out our [CONTRIBUTING.md](CONTRIBUTING.md) guide!
