@@ -1,36 +1,49 @@
-import 'dotenv/config'; // Charge automatiquement le .env
+import 'dotenv/config';
 import { DiscordManager } from './discord';
-import { StremioClient } from './stremio';
+import { TraktClient } from './trakt';
 
 const POLLING_INTERVAL_MS = 15000;
 
 async function bootstrap() {
-    const clientId = process.env.DISCORD_CLIENT_ID;
-    const stremioUrl = process.env.STREMIO_API_URL || 'http://127.0.0.1:11470';
+    const discordClientId = process.env.DISCORD_CLIENT_ID;
+    const traktClientId = process.env.TRAKT_CLIENT_ID;
+    const traktUsername = process.env.TRAKT_USERNAME;
 
-    if (!clientId) {
-        console.error('Erreur critique : DISCORD_CLIENT_ID est manquant dans le .env');
+    if (!discordClientId || !traktClientId || !traktUsername) {
+        console.error('Erreur critique : Variables manquantes dans le .env');
         process.exit(1);
     }
 
-    const discord = new DiscordManager(clientId);
-    const stremio = new StremioClient(stremioUrl);
+    const discord = new DiscordManager(discordClientId);
+    const trakt = new TraktClient(traktUsername, traktClientId);
 
-    console.log('Démarrage du daemon Stremio-Discord RPC...');
+    console.log('Démarrage du daemon Trakt-Discord RPC...');
     await discord.connect();
 
-    let wasPlaying = false;
+    // Variables d'état
+    let currentStream = "";
+    let currentStartTimestamp: Date | undefined = undefined;
 
     setInterval(async () => {
-        const playing = await stremio.getCurrentPlaying();
+        const playing = await trakt.getCurrentPlaying();
 
         if (playing) {
-            await discord.setPresence(playing.title, playing.streamName);
-            wasPlaying = true;
-        } else if (wasPlaying) {
-            // Si la lecture s'arrête, on nettoie le statut Discord
-            await discord.clearPresence();
-            wasPlaying = false;
+            // Si c'est une nouvelle lecture, on met à jour Discord
+            if (playing.streamName !== currentStream) {
+                console.log(`[Changement d'état] Nouveau média détecté : ${playing.title} | ${playing.streamName}`);
+                currentStream = playing.streamName;
+                currentStartTimestamp = new Date(); // On fige l'heure de début
+
+                await discord.setPresence(playing.title, playing.streamName, currentStartTimestamp);
+            }
+        } else {
+            // Si rien ne joue mais qu'on avait un statut actif, on nettoie
+            if (currentStream !== "") {
+                console.log(`[Changement d'état] Arrêt de la lecture. Nettoyage de Discord.`);
+                await discord.clearPresence();
+                currentStream = "";
+                currentStartTimestamp = undefined;
+            }
         }
     }, POLLING_INTERVAL_MS);
 }
