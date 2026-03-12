@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsup src/index.ts --format cjs --clean",
-    "package": "npm run build && pkg . --targets node18-win-x64 --output bin/stremio-rpc.exe"
+    "package": "npm run build && pkg . --targets node18-win-x64 --output bin/stremio-rpc.exe",
+    "postpackage": "copy scripts\\*.bat bin\\"
   },
   "pkg": {
     "assets": [

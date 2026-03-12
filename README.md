@@ -44,6 +44,19 @@ TRAKT_USERNAME=YourTraktUsernameHere
 
 ```
 
+### Optionnal. 🔄 Autostart (Windows Startup)
+
+For a seamless experience, you can configure the daemon to launch automatically and silently every time you turn on your PC.
+
+Once you have generated the executable (or downloaded the `bin` folder) and added your `.env` file:
+1. Double-click the **`install-startup.bat`** file located inside the `bin/` folder.
+2. It will safely register the absolute path of the executable in your current Windows User Registry.
+3. If you ever move the `bin` folder to another location on your computer, simply run the script again to update the path.
+
+To disable the autostart feature at any time, run **`uninstall-startup.bat`**.
+
+> **Note:** These scripts do not require Administrator privileges as they only write to the Current User scope (`HKCU`), ensuring a safe and isolated deployment.
+
 ## 🚀 Usage
 
 Simply double-click the `stremio-rpc.exe` file. An icon will silently appear in your Windows System Tray (bottom right near the clock).
